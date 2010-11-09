@@ -1,17 +1,8 @@
+# Todo: make this a threadlocal
 identity_map = {}
 
 def identity_map_hit(result):
     return result
-    if result['_id'] not in identity_map:
-        return result
-    else:
-        old_result = identity_map[result['_id']]
-        data = {}
-        # Oh no, how do I know what's dirty?
-        data.update(result)
-        data.update(old_result._data)
-        old_result.data = data
-        return old_result
 
 class Record(object):
     def __new__(class_, *args, **kwargs):
@@ -33,9 +24,9 @@ class Record(object):
         return "<%s %s>" % (self.__class__, self._data)
 
     @classmethod
-    def _resolve_collection(self, collection=None):
+    def _resolve_collection(cls, collection=None):
         if not collection:
-            collection = getattr(self, '_collection', None)
+            collection = getattr(cls, '_collection', None)
             if not collection:
                 raise Exception, "No collection selected"
 
@@ -52,22 +43,21 @@ class Record(object):
         return id
 
     @classmethod
-    def find(self, _collection=None, **kwargs):
-        collection = self._resolve_collection(_collection)
+    def find(cls, _collection=None, **kwargs):
+        collection = cls._resolve_collection(_collection)
         results = collection.find(kwargs)
-        for result in results:
-            yield identity_map_hit(result)
+        return [cls(**result) for result in results]
 
     @classmethod
-    def find_one(self, _collection=None, **kwargs):
-        collection = self._resolve_collection(_collection)
+    def find_one(cls, _collection=None, **kwargs):
+        collection = cls._resolve_collection(_collection)
         result = collection.find_one(kwargs)
-        identity_map[result['_id']] = result
-        return identity_map_hit(result)
+        if result:
+            return cls(**result)
 
     @classmethod
-    def count(self, _collection=None, **kwargs):
-        collection = self._resolve_collection(_collection)
+    def count(cls, _collection=None, **kwargs):
+        collection = cls._resolve_collection(_collection)
         return collection.count(kwargs)
 
 class User(Record):
