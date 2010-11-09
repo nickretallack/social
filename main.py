@@ -1,6 +1,7 @@
 from flask import Flask, g, request, session, redirect, abort, url_for, render_template, flash
 from pymongo import Connection
 import mongorm
+CSRF_ENABLED = False
 app = Flask(__name__)
 app.config.from_object(__name__)
 connection = Connection()
@@ -12,19 +13,22 @@ app.secret_key = 'insecure'
 
 from hashlib import sha1 as hasher
 def hashed(password):
-    return hasher.new(password, PASSWORD_SALT).hexdigest()
+    return hasher(password + PASSWORD_SALT).hexdigest()
 
 # Models
 class User(mongorm.Record):
     _collection = 'user'
 
+class Thing(mongorm.Record):
+    _collection = 'thing'
+
+
 from flaskext.wtf import Form, TextField, PasswordField, Required
 from wtforms.validators import ValidationError
 
 class AuthenticatesUser(object):
-    def __init__(self, name_field, message=None):
+    def __init__(self, name_field):
         self.name_field = name_field
-        self.message = message
 
     def __call__(self, form, field):
         name = form[self.name_field].data
@@ -36,7 +40,6 @@ class AuthenticatesUser(object):
         if user.hashed_password != hashed(password):
             raise ValidationError("Incorrect password for user: %s" % name)
 
-        session['user'] = user._id
         g.user = user
 
 class LoginForm(Form):
@@ -49,7 +52,7 @@ anonymous_user = User(name='anonymous')
 @app.before_request
 def set_user():
     if 'user' in session:
-        g.user = User.find(_id=session['user'])
+        g.user = User.find_one(_id=session['user'])
         g.logged_in = True
     else:
         g.user = anonymous_user
@@ -59,13 +62,28 @@ def set_user():
 def front():
     return render_template('front.html')
 
+# TODO: https
 @app.route('/login', methods=['GET','POST'])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        flash("Logged in as " % g.user['name'])
+        session['user'] = g.user._id
         return redirect(url_for('front'))
-    return render_template('login.html', form=form)
+    else:
+        return render_template('login.html', form=form)
+
+@app.route('/logout')
+def logout():
+    del session['user']
+    return redirect(url_for('front'))
+
+
+@app.route('/invite', methods=['GET','POST'])
+def invite():
+    form = InviteForm()
+    if form.validate_on_submit():
+        return redirect(url_for('invite'))
+    return render_template('invite.html', form=form)
 
 # Run
 if __name__ == "__main__":

@@ -12,6 +12,11 @@
   {% block head %}
   {% endblock %}
 </head><body>
+<div id="flash">
+    {% for message in get_flashed_messages() %}
+        <p>{{message}}
+    {% endfor %}
+</div>
 <div id="menu">
     <a href="{{ url_for('front')}}">Home</a> | 
     

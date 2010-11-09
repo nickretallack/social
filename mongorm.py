@@ -1,10 +1,12 @@
+from UserDict import DictMixin
+
 # Todo: make this a threadlocal
 identity_map = {}
 
 def identity_map_hit(result):
     return result
 
-class Record(object):
+class Record(DictMixin):
     def __new__(class_, *args, **kwargs):
         # TODO: handle the case of ObjectId vs non-ObjectId in the _id field
         if '_id' in kwargs and kwargs['_id'] in identity_map:
@@ -18,7 +20,7 @@ class Record(object):
         return instance
 
     def __init__(self, **kwargs):
-        self._data = kwargs
+        self.__dict__['_data'] = kwargs
 
     def __repr__(self, **kwargs):
         return "<%s %s>" % (self.__class__, self._data)
@@ -59,6 +61,29 @@ class Record(object):
     def count(cls, _collection=None, **kwargs):
         collection = cls._resolve_collection(_collection)
         return collection.count(kwargs)
+
+    # Dict Mixin Stuff
+    def __getitem__(self, key):
+        return self._data[key]
+
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
+    def __delitem__(self, key):
+        del self._data[key]
+
+    def keys(self):
+        return self._data.keys()
+
+    # Pretty Properties
+
+    def __getattr__(self, attr):
+        if attr in self:
+            return self._data[attr]
+
+    def __setattr__(self, attr, value):
+        self._data[attr] = value
+
 
 class User(Record):
     _collection = 'user'
