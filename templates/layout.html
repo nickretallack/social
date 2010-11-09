@@ -15,14 +15,11 @@
 <div id="menu">
     <a href="{{ url_for('front')}}">Home</a> | 
     
-    {% if g.current_user %}
-    Logged in as {{g.current_user.name}}
+    {% if g.logged_in %}
+    Logged in as {{g.user.name}}
     | <a href="{{url_for('logout')}}">Log Out</a>
     {% else %}
-    <form action="{{url_for('login')}}" method="post">
-    <input type="text" name="name">
-    <input type="hidden" name="next" value="{{request.url}}">
-    <button>Log In</button>
+    <a href="{{url_for('login')}}">Log In</a>
     </form>
     {% endif %}
 
