@@ -1,6 +1,8 @@
 from flask import Flask, g, request, session, redirect, abort, url_for, render_template, flash
 from pymongo import Connection
 import mongorm
+from base64 import b64decode
+
 CSRF_ENABLED = False
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -84,6 +86,16 @@ def invite():
     if form.validate_on_submit():
         return redirect(url_for('invite'))
     return render_template('invite.html', form=form)
+
+from random import randint
+@app.route('/upload', methods=['POST'])
+def upload():
+    filename = request.headers['UP-FILENAME']
+    data = b64decode(request.data)
+    with open(filename, 'wb') as file:
+        file.write(data)
+    return "uploaded"
+
 
 # Run
 if __name__ == "__main__":

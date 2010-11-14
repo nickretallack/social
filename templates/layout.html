@@ -7,11 +7,17 @@
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
 <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.js"></script>
 <script type="text/javascript" src="http://dev.jquery.com/view/trunk/plugins/autocomplete/jquery.autocomplete.js"></script>
+<script type="text/javascript" src="{{url_for('static', filename='html5uploader.js')}}"></script>
 <link rel="stylesheet" href="http://dev.jquery.com/view/trunk/plugins/autocomplete/jquery.autocomplete.css" type="text/css"/>
 <script src="http://documentcloud.github.com/underscore/underscore.js"></script>
+<script type="text/javascript">
+$(function(){
+    new uploader('body', null, "{{url_for('upload')}}", 'files')
+})
+</script>
   {% block head %}
   {% endblock %}
-</head><body>
+</head><body id="body">
 <div id="flash">
     {% for message in get_flashed_messages() %}
         <p>{{message}}
